@@ -6,8 +6,11 @@ import { ManagerTabs } from '../sections/dashboard/ManagerTabs';
 import { UserItem } from '../sections/dashboard/UserItem';
 import { BulkStatusBar } from '../sections/dashboard/BulkStatusBar';
 import { useGitHubManager } from '../hooks/useGitHubManager';
-import { Filter, SortAsc, AlertCircle } from 'lucide-react';
-import { Card } from '../components/ui/Card';
+import { Filter, SortAsc } from 'lucide-react';
+import { UserItemSkeleton, StatCardSkeleton } from '../components/ui/Skeleton';
+import { UserProfileModal } from '../components/ui/UserProfileModal';
+import { AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 
 export const HomePage: React.FC = () => {
   const {
@@ -19,7 +22,6 @@ export const HomePage: React.FC = () => {
     progress,
     progressLabel,
     bulkStatus,
-    error,
     analyze,
     handleAction,
     handleBulkAction,
@@ -31,10 +33,18 @@ export const HomePage: React.FC = () => {
   const [filter, setFilter] = useState('');
   const [sortBy, setSortBy] = useState<'alpha' | 'z' | 'pending'>('pending');
   const [token, setToken] = useState('');
+  const [selectedUser, setSelectedUser] = useState<string | null>(null);
 
-  const handleAnalyzeWithToken = (t: string, u: string) => {
+  const handleAnalyzeWithToken = async (t: string, u: string) => {
     setToken(t);
-    analyze(t, u);
+    try {
+      await analyze(t, u);
+      toast.success('Analysis complete');
+    } catch (err) {
+      toast.error('Analysis failed', {
+        description: err instanceof Error ? err.message : 'Unknown error'
+      });
+    }
   };
 
   const filteredData = useMemo(() => {
@@ -85,11 +95,17 @@ export const HomePage: React.FC = () => {
         progressLabel={progressLabel}
       />
 
-      {error && (
-        <Card className="error-toast" noHover>
-          <AlertCircle size={18} />
-          <p>{error}</p>
-        </Card>
+      {isAnalyzing && !hasData && (
+        <div className="results-section">
+          <div className="stats-grid">
+             {[1, 2, 3, 4, 5].map(i => <StatCardSkeleton key={i} />)}
+          </div>
+          <div className="manager-section">
+             <div className="user-list">
+                {[1, 2, 3].map(i => <UserItemSkeleton key={i} />)}
+             </div>
+          </div>
+        </div>
       )}
 
       {hasData && (
@@ -102,7 +118,13 @@ export const HomePage: React.FC = () => {
               total={bulkStatus.total}
               isActive={bulkStatus.active}
               onStop={stopBulkAction}
-              onStart={() => handleBulkAction(token, activeTab)}
+              onStart={() => {
+                toast.promise(handleBulkAction(token, activeTab), {
+                  loading: `Bulk ${activeTab === 'nonMutual' ? 'unfollowing' : 'following'}...`,
+                  success: 'Bulk action finished',
+                  error: 'Bulk action failed'
+                });
+              }}
               type={activeTab === 'nonMutual' ? 'unfollow' : 'follow'}
             />
 
@@ -147,6 +169,7 @@ export const HomePage: React.FC = () => {
                       activeTab === 'nonMutual' ? 'unfollow' : 'follow', 
                       activeTab
                     )}
+                    onViewProfile={(login) => setSelectedUser(login)}
                     actionLabel={activeTab === 'nonMutual' ? 'Unfollow' : 'Follow Back'}
                     badgeLabel={activeTab === 'nonMutual' ? 'Not Following' : 'Fan'}
                     badgeType={activeTab === 'nonMutual' ? 'danger' : 'success'}
@@ -162,6 +185,16 @@ export const HomePage: React.FC = () => {
           </div>
         </div>
       )}
+
+      <AnimatePresence>
+        {selectedUser && (
+          <UserProfileModal 
+            login={selectedUser} 
+            token={token} 
+            onClose={() => setSelectedUser(null)} 
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };
