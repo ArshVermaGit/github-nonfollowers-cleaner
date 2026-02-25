@@ -1,14 +1,5 @@
 import axios from 'axios';
-
-export interface GitHubUser {
-  login: string;
-  id: number;
-  avatar_url: string;
-  html_url: string;
-  name?: string;
-  followers_url: string;
-  following_url: string;
-}
+import type { GitHubUser } from '../types/github';
 
 export class GitHubService {
   private token: string;
