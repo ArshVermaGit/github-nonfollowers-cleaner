@@ -19,6 +19,15 @@ export class GitHubService {
       },
     });
 
+    // Extract rate limits
+    const remaining = response.headers['x-ratelimit-remaining'];
+    const limit = response.headers['x-ratelimit-limit'];
+    if (remaining) {
+      window.dispatchEvent(new CustomEvent('gh-rate-limit', { 
+        detail: { remaining: parseInt(remaining), limit: parseInt(limit) } 
+      }));
+    }
+
     if (method === 'DELETE' && response.status === 204) {
       return { ok: true } as unknown as T;
     }
