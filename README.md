@@ -1,73 +1,75 @@
-# React + TypeScript + Vite
+# 🚀 GitHub Follow Manager
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+[![React](https://img.shields.io/badge/React-18-blue.svg)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue.svg)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-6-purple.svg)](https://vitejs.dev/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-Currently, two official plugins are available:
+**GitHub Follow Manager** is a professional, high-performance tool designed to help developers manage their social relationships on GitHub. Analyze followers, identify non-mutual connections, and manage your network with a premium, animated dashboard.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+![Dashboard Preview](https://via.placeholder.com/1200x600/0c0c0c/ffffff?text=GitHub+Follow+Manager+v2.0)
 
-## React Compiler
+## ✨ Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- ⚡ **Lightning Fast**: Built with Vite 6 and React 18 for near-instant analysis.
+- 💎 **Premium UI**: Dark-mode monochrome aesthetic with glassmorphism and smooth Framer Motion animations.
+- 🛡️ **Privacy First**: Everything runs in your browser. Tokens are stored in `localStorage` and never touch a private server.
+- 📊 **Deep Insights**: View detailed profiles, repository counts, and account age within the app.
+- 📦 **Bulk Actions**: Unfollow non-followers or follow back fans in one click with intelligent rate-limit tracking.
+- 🚦 **Rate Limit Monitoring**: Real-time status bar for GitHub API usage.
 
-## Expanding the ESLint configuration
+## 🚀 Quick Start
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Installation
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+```bash
+# Clone the repository
+git clone https://github.com/your-username/github-nonfollowers-cleaner.git
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+# Enter the project
+cd github-nonfollowers-cleaner
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### Usage
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+1. Generate a **GitHub Personal Access Token (Classic)**.
+2. Ensure it has `read:user` and `user:follow` permissions.
+3. Paste the token into the app along with your username.
+4. Hit **Fetch & Analyze**.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## 🏗️ Architecture
+
+The project follows a modular Atomic Design pattern:
+
+```mermaid
+graph TD
+    A[App.tsx] --> B[Router]
+    B --> C[HomePage]
+    B --> D[SettingsPage]
+    B --> E[AboutPage]
+    C --> F[useGitHubManager Hook]
+    F --> G[GitHubService]
+    G --> H[GitHub API]
+    C --> I[Modular Dashboard Sections]
+    I --> J[Atomic UI Components]
 ```
+
+## 🤝 Contributing
+
+Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+
+## 📄 License
+
+Distributed under the MIT License. See `LICENSE` for more information.
+
+---
+
+Built with ❤️ by [Arsh Verma](https://github.com/arshverma)
