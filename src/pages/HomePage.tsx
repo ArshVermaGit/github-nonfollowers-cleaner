@@ -3,9 +3,11 @@ import { Header } from '../components/layout/Header';
 import { AuthSection } from '../components/dashboard/AuthSection';
 import { StatsSection } from '../components/dashboard/StatsSection';
 import { ManagerTabs } from '../components/dashboard/ManagerTabs';
+import { FollowersSearch } from '../components/dashboard/FollowersSearch';
 import { UserItem } from '../components/dashboard/UserItem';
 import { BulkStatusBar } from '../components/dashboard/BulkStatusBar';
 import { useGitHubManager } from '../hooks/useGitHubManager';
+import { useFollowersSearch } from '../hooks/useFollowersSearch';
 import { Filter, SortAsc } from 'lucide-react';
 import { UserItemSkeleton, StatCardSkeleton } from '../components/ui/Skeleton';
 import { UserProfileModal } from '../components/ui/UserProfileModal';
@@ -29,11 +31,13 @@ export const HomePage: React.FC = () => {
     reset
   } = useGitHubManager();
 
-  const [activeTab, setActiveTab] = useState<'nonMutual' | 'fans'>('nonMutual');
+  const [activeTab, setActiveTab] = useState<'nonMutual' | 'fans' | 'search'>('nonMutual');
   const [filter, setFilter] = useState('');
   const [sortBy, setSortBy] = useState<'alpha' | 'z' | 'pending'>('pending');
   const [token, setToken] = useState('');
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
+
+  const search = useFollowersSearch(token);
 
   const handleAnalyzeWithToken = async (t: string, u: string) => {
     setToken(t);
@@ -113,20 +117,37 @@ export const HomePage: React.FC = () => {
           <StatsSection {...stats} />
 
           <div className="manager-section">
-            <BulkStatusBar 
-              current={bulkStatus.current}
-              total={bulkStatus.total}
-              isActive={bulkStatus.active}
-              onStop={stopBulkAction}
-              onStart={() => {
-                toast.promise(handleBulkAction(token, activeTab), {
-                  loading: `Bulk ${activeTab === 'nonMutual' ? 'unfollowing' : 'following'}...`,
-                  success: 'Bulk action finished',
-                  error: 'Bulk action failed'
-                });
-              }}
-              type={activeTab === 'nonMutual' ? 'unfollow' : 'follow'}
-            />
+            {activeTab === 'search' ? (
+              <BulkStatusBar 
+                current={search.bulkStatus.current}
+                total={search.bulkStatus.active ? search.bulkStatus.total : search.followers.filter(u => u.state !== 'done').length}
+                isActive={search.bulkStatus.active}
+                onStop={search.stopBulkFollow}
+                onStart={() => {
+                  toast.promise(search.handleBulkFollow(), {
+                    loading: 'Bulk following...',
+                    success: 'Bulk follow action finished',
+                    error: 'Bulk action failed'
+                  });
+                }}
+                type="follow"
+              />
+            ) : (
+              <BulkStatusBar 
+                current={bulkStatus.current}
+                total={bulkStatus.active ? bulkStatus.total : (activeTab === 'nonMutual' ? nonMutual.filter(u => u.state !== 'done').length : fans.filter(u => u.state !== 'done').length)}
+                isActive={bulkStatus.active}
+                onStop={stopBulkAction}
+                onStart={() => {
+                  toast.promise(handleBulkAction(token, activeTab as 'nonMutual' | 'fans'), {
+                    loading: `Bulk ${activeTab === 'nonMutual' ? 'unfollowing' : 'following'}...`,
+                    success: 'Bulk action finished',
+                    error: 'Bulk action failed'
+                  });
+                }}
+                type={activeTab === 'nonMutual' ? 'unfollow' : 'follow'}
+              />
+            )}
 
             <ManagerTabs 
               activeTab={activeTab}
@@ -135,53 +156,68 @@ export const HomePage: React.FC = () => {
               fansCount={stats.fans}
             />
 
-            <div className="controls-row">
-              <div className="filter-box">
-                <Filter size={16} />
-                <input 
-                  type="text" 
-                  placeholder="Filter users..." 
-                  value={filter}
-                  onChange={(e) => setFilter(e.target.value)}
-                />
-              </div>
+            {activeTab === 'search' ? (
+              <FollowersSearch 
+                onViewProfile={(login) => setSelectedUser(login)}
+                followers={search.followers}
+                isSearching={search.isSearching}
+                searchProgress={search.searchProgress}
+                searchProgressLabel={search.searchProgressLabel}
+                bulkStatus={search.bulkStatus}
+                searchAccount={search.searchAccount}
+                handleFollowAction={search.handleFollowAction}
+              />
+            ) : (
+              <>
+                <div className="controls-row">
+                  <div className="filter-box">
+                    <Filter size={16} />
+                    <input 
+                      type="text" 
+                      placeholder="Filter users..." 
+                      value={filter}
+                      onChange={(e) => setFilter(e.target.value)}
+                    />
+                  </div>
 
-              <div className="sort-box">
-                <SortAsc size={16} />
-                <select value={sortBy} onChange={(e) => setSortBy(e.target.value as 'alpha' | 'z' | 'pending')}>
-                  <option value="pending">Pending First</option>
-                  <option value="alpha">A-Z</option>
-                  <option value="z">Z-A</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="user-list">
-              {filteredData.length > 0 ? (
-                filteredData.map((user, idx) => (
-                  <UserItem 
-                    key={user.login}
-                    user={user}
-                    index={idx}
-                    onAction={(login) => handleAction(
-                      token, 
-                      login, 
-                      activeTab === 'nonMutual' ? 'unfollow' : 'follow', 
-                      activeTab
-                    )}
-                    onViewProfile={(login) => setSelectedUser(login)}
-                    actionLabel={activeTab === 'nonMutual' ? 'Unfollow' : 'Follow Back'}
-                    badgeLabel={activeTab === 'nonMutual' ? 'Not Following' : 'Fan'}
-                    badgeType={activeTab === 'nonMutual' ? 'danger' : 'success'}
-                  />
-                ))
-              ) : (
-                <div className="empty-state">
-                  <h3>No users found</h3>
-                  <p>Adjust your filter or switch tabs</p>
+                  <div className="sort-box">
+                    <SortAsc size={16} />
+                    <select value={sortBy} onChange={(e) => setSortBy(e.target.value as 'alpha' | 'z' | 'pending')}>
+                      <option value="pending">Pending First</option>
+                      <option value="alpha">A-Z</option>
+                      <option value="z">Z-A</option>
+                    </select>
+                  </div>
                 </div>
-              )}
-            </div>
+
+                <div className="user-list">
+                  {filteredData.length > 0 ? (
+                    filteredData.map((user, idx) => (
+                      <UserItem 
+                        key={user.login}
+                        user={user}
+                        index={idx}
+                        onAction={(login) => handleAction(
+                          token, 
+                          login, 
+                          activeTab === 'nonMutual' ? 'unfollow' : 'follow', 
+                          activeTab
+                        )}
+                        onViewProfile={(login) => setSelectedUser(login)}
+                        actionLabel={activeTab === 'nonMutual' ? 'Unfollow' : 'Follow Back'}
+                        badgeLabel={activeTab === 'nonMutual' ? 'Not Following' : 'Fan'}
+                        badgeType={activeTab === 'nonMutual' ? 'danger' : 'success'}
+                      />
+                    ))
+                  ) : (
+                    <div className="empty-state">
+                      <h3>No users found</h3>
+                      <p>Adjust your filter or switch tabs</p>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
