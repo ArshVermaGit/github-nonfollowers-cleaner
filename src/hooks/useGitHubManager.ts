@@ -7,6 +7,7 @@ export const useGitHubManager = () => {
   const [followers, setFollowers] = useState<GitHubUser[]>([]);
   const [nonMutual, setNonMutual] = useState<UserWithState[]>([]);
   const [fans, setFans] = useState<UserWithState[]>([]);
+  const [mutual, setMutual] = useState<UserWithState[]>([]);
   
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -56,10 +57,15 @@ export const useGitHubManager = () => {
         .filter(u => !followingSet.has(u.login))
         .map(u => ({ ...u, state: 'idle' as UserState }));
 
+      const mutualList = followingList
+        .filter(u => followerSet.has(u.login))
+        .map(u => ({ ...u, state: 'done' as UserState }));
+
       setFollowing(followingList);
       setFollowers(followersList);
       setNonMutual(nonMutualList);
       setFans(fansList);
+      setMutual(mutualList);
 
       setProgress(100);
       setProgressLabel(`Analyzed! ${nonMutualList.length} non-followers · ${fansList.length} fans waiting`);
@@ -75,10 +81,10 @@ export const useGitHubManager = () => {
     token: string, 
     login: string, 
     action: 'follow' | 'unfollow',
-    type: 'nonMutual' | 'fans'
+    type: 'nonMutual' | 'fans' | 'mutual'
   ) => {
     const service = new GitHubService(token);
-    const updateList = type === 'nonMutual' ? setNonMutual : setFans;
+    const updateList = type === 'nonMutual' ? setNonMutual : (type === 'fans' ? setFans : setMutual);
 
     updateList(prev => prev.map(u => u.login === login ? { ...u, state: 'loading' } : u));
 
@@ -138,6 +144,7 @@ export const useGitHubManager = () => {
     setFollowers([]);
     setNonMutual([]);
     setFans([]);
+    setMutual([]);
     setProgress(0);
     setProgressLabel('');
     setError(null);
@@ -149,6 +156,7 @@ export const useGitHubManager = () => {
     followers,
     nonMutual,
     fans,
+    mutual,
     isAnalyzing,
     progress,
     progressLabel,

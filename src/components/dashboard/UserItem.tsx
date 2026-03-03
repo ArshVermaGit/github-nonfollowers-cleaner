@@ -32,12 +32,16 @@ export const UserItem: React.FC<UserItemProps> = ({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: Math.min(index * 0.05, 0.4), ease: "easeOut" }}
+      initial={{ opacity: 0, x: -10 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ 
+        delay: Math.min(index * 0.03, 0.3), 
+        duration: 0.4,
+        ease: [0.16, 1, 0.3, 1] 
+      }}
     >
       <Card className={clsx("user-item-card", isDone && "done")} noHover={isDone}>
-        <div className="user-avatar-wrap" onClick={() => onViewProfile?.(user.login)} style={{ cursor: 'pointer' }}>
+        <div className="user-avatar-wrap" onClick={() => onViewProfile?.(user.login)}>
           <img src={`${user.avatar_url}&s=100`} alt={user.login} className="user-avatar" loading="lazy" />
           <div className="avatar-overlay">
              <Search size={18} />
@@ -58,7 +62,7 @@ export const UserItem: React.FC<UserItemProps> = ({
         </div>
 
         <Badge variant={isDone ? 'done' : badgeType}>
-          {isDone ? `✓ ${badgeType === 'danger' ? 'unfollowed' : 'following'}` : badgeLabel}
+          {isDone ? `✓ ${badgeLabel === 'Mutual' ? 'mutual' : (badgeType === 'danger' ? 'unfollowed' : 'following')}` : badgeLabel}
         </Badge>
 
         <Button

@@ -1,19 +1,20 @@
-import React from 'react';
-import { UserMinus, UserPlus, Search } from 'lucide-react';
+import { UserMinus, UserPlus, Search, ShieldCheck } from 'lucide-react';
 import { clsx } from 'clsx';
 
 interface ManagerTabsProps {
-  activeTab: 'nonMutual' | 'fans' | 'search';
-  onTabChange: (tab: 'nonMutual' | 'fans' | 'search') => void;
+  activeTab: 'nonMutual' | 'fans' | 'search' | 'mutual';
+  onTabChange: (tab: 'nonMutual' | 'fans' | 'search' | 'mutual') => void;
   nonMutualCount: number;
   fansCount: number;
+  mutualCount: number;
 }
 
 export const ManagerTabs: React.FC<ManagerTabsProps> = ({
   activeTab,
   onTabChange,
   nonMutualCount,
-  fansCount
+  fansCount,
+  mutualCount
 }) => {
   return (
     <div className="tabs-container">
@@ -39,6 +40,18 @@ export const ManagerTabs: React.FC<ManagerTabsProps> = ({
         <UserPlus size={20} />
         <span>Fans</span>
         <span className="tab-badge">{fansCount}</span>
+      </button>
+
+      <button
+        onClick={() => onTabChange('mutual')}
+        className={clsx(
+          "tab-item",
+          activeTab === 'mutual' && "active-tab primary"
+        )}
+      >
+        <ShieldCheck size={20} />
+        <span>Mutual</span>
+        <span className="tab-badge">{mutualCount}</span>
       </button>
 
       <button

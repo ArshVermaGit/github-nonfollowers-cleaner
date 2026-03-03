@@ -8,7 +8,7 @@ import { UserItem } from '../components/dashboard/UserItem';
 import { BulkStatusBar } from '../components/dashboard/BulkStatusBar';
 import { useGitHubManager } from '../hooks/useGitHubManager';
 import { useFollowersSearch } from '../hooks/useFollowersSearch';
-import { Filter, SortAsc } from 'lucide-react';
+import { Filter, SortAsc, Copy } from 'lucide-react';
 import { UserItemSkeleton, StatCardSkeleton } from '../components/ui/Skeleton';
 import { UserProfileModal } from '../components/ui/UserProfileModal';
 import { AnimatePresence } from 'framer-motion';
@@ -20,6 +20,7 @@ export const HomePage: React.FC = () => {
     followers,
     nonMutual,
     fans,
+    mutual,
     isAnalyzing,
     progress,
     progressLabel,
@@ -31,7 +32,7 @@ export const HomePage: React.FC = () => {
     reset
   } = useGitHubManager();
 
-  const [activeTab, setActiveTab] = useState<'nonMutual' | 'fans' | 'search'>('nonMutual');
+  const [activeTab, setActiveTab] = useState<'nonMutual' | 'fans' | 'search' | 'mutual'>('nonMutual');
   const [filter, setFilter] = useState('');
   const [sortBy, setSortBy] = useState<'alpha' | 'z' | 'pending'>('pending');
   const [token, setToken] = useState('');
@@ -52,8 +53,8 @@ export const HomePage: React.FC = () => {
   };
 
   const filteredData = useMemo(() => {
-    const data = activeTab === 'nonMutual' ? nonMutual : fans;
-    const list = data.filter(u => 
+    const data = activeTab === 'nonMutual' ? nonMutual : (activeTab === 'fans' ? fans : mutual);
+    const list = [...data].filter(u => 
       u.login.toLowerCase().includes(filter.toLowerCase()) || 
       (u.name || '').toLowerCase().includes(filter.toLowerCase())
     );
@@ -69,21 +70,27 @@ export const HomePage: React.FC = () => {
     }
 
     return list;
-  }, [activeTab, nonMutual, fans, filter, sortBy]);
+  }, [activeTab, nonMutual, fans, mutual, filter, sortBy]);
 
   const stats = useMemo(() => {
     const pendingNonMutual = nonMutual.filter(u => u.state !== 'done').length;
     const pendingFans = fans.filter(u => u.state !== 'done').length;
-    const mutual = following.length - nonMutual.length;
+    // const mutualCount = following.length - nonMutual.length;
 
     return {
       following: following.length,
       followers: followers.length,
-      mutual,
+      mutual: mutual.length,
       nonMutual: pendingNonMutual,
       fans: pendingFans
     };
-  }, [following, followers, nonMutual, fans]);
+  }, [following, followers, nonMutual, fans, mutual]);
+
+  const handleCopyLogins = () => {
+    const logins = filteredData.map(u => u.login).join('\n');
+    navigator.clipboard.writeText(logins);
+    toast.success('Logins copied to clipboard');
+  };
 
   const hasData = following.length > 0 || followers.length > 0;
 
@@ -133,20 +140,22 @@ export const HomePage: React.FC = () => {
                 type="follow"
               />
             ) : (
-              <BulkStatusBar 
-                current={bulkStatus.current}
-                total={bulkStatus.active ? bulkStatus.total : (activeTab === 'nonMutual' ? nonMutual.filter(u => u.state !== 'done').length : fans.filter(u => u.state !== 'done').length)}
-                isActive={bulkStatus.active}
-                onStop={stopBulkAction}
-                onStart={() => {
-                  toast.promise(handleBulkAction(token, activeTab as 'nonMutual' | 'fans'), {
-                    loading: `Bulk ${activeTab === 'nonMutual' ? 'unfollowing' : 'following'}...`,
-                    success: 'Bulk action finished',
-                    error: 'Bulk action failed'
-                  });
-                }}
-                type={activeTab === 'nonMutual' ? 'unfollow' : 'follow'}
-              />
+              activeTab !== 'mutual' && (
+                <BulkStatusBar 
+                  current={bulkStatus.current}
+                  total={bulkStatus.active ? bulkStatus.total : (activeTab === 'nonMutual' ? nonMutual.filter(u => u.state !== 'done').length : fans.filter(u => u.state !== 'done').length)}
+                  isActive={bulkStatus.active}
+                  onStop={stopBulkAction}
+                  onStart={() => {
+                    toast.promise(handleBulkAction(token, activeTab as 'nonMutual' | 'fans'), {
+                      loading: `Bulk ${activeTab === 'nonMutual' ? 'unfollowing' : 'following'}...`,
+                      success: 'Bulk action finished',
+                      error: 'Bulk action failed'
+                    });
+                  }}
+                  type={activeTab === 'nonMutual' ? 'unfollow' : 'follow'}
+                />
+              )
             )}
 
             <ManagerTabs 
@@ -154,6 +163,7 @@ export const HomePage: React.FC = () => {
               onTabChange={(t) => { setActiveTab(t); setFilter(''); }}
               nonMutualCount={stats.nonMutual}
               fansCount={stats.fans}
+              mutualCount={stats.mutual}
             />
 
             {activeTab === 'search' ? (
@@ -180,13 +190,20 @@ export const HomePage: React.FC = () => {
                     />
                   </div>
 
-                  <div className="sort-box">
-                    <SortAsc size={16} />
-                    <select value={sortBy} onChange={(e) => setSortBy(e.target.value as 'alpha' | 'z' | 'pending')}>
-                      <option value="pending">Pending First</option>
-                      <option value="alpha">A-Z</option>
-                      <option value="z">Z-A</option>
-                    </select>
+                  <div className="actions-group" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                    <button className="copy-btn" onClick={handleCopyLogins}>
+                      <Copy size={14} />
+                      Logins
+                    </button>
+
+                    <div className="sort-box">
+                      <SortAsc size={16} />
+                      <select value={sortBy} onChange={(e) => setSortBy(e.target.value as 'alpha' | 'z' | 'pending')}>
+                        <option value="pending">Pending First</option>
+                        <option value="alpha">A-Z</option>
+                        <option value="z">Z-A</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
 
@@ -205,7 +222,7 @@ export const HomePage: React.FC = () => {
                         )}
                         onViewProfile={(login) => setSelectedUser(login)}
                         actionLabel={activeTab === 'nonMutual' ? 'Unfollow' : 'Follow Back'}
-                        badgeLabel={activeTab === 'nonMutual' ? 'Not Following' : 'Fan'}
+                        badgeLabel={activeTab === 'nonMutual' ? 'Not Following' : (activeTab === 'fans' ? 'Fan' : 'Mutual')}
                         badgeType={activeTab === 'nonMutual' ? 'danger' : 'success'}
                       />
                     ))
