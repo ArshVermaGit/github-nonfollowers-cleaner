@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { GitHubService } from '../services/github';
 import type { UserWithState, UserState, BulkStatus } from '../types/github';
 import { toast } from 'sonner';
@@ -16,6 +16,8 @@ export const useFollowersSearch = (token: string) => {
     total: 0,
     stopped: false
   });
+
+  const isStoppedRef = useRef(false);
 
   const searchAccount = useCallback(async (username: string) => {
     if (!token || !username) return;
@@ -69,32 +71,29 @@ export const useFollowersSearch = (token: string) => {
     if (!token) return;
     const pending = followers.filter(u => u.state !== 'done');
     
+    isStoppedRef.current = false;
     setBulkStatus({ active: true, current: 0, total: pending.length, stopped: false });
 
     for (let i = 0; i < pending.length; i++) {
-      let isStopped = false;
-      setBulkStatus(prev => {
-        if (prev.stopped) isStopped = true;
-        return prev;
-      });
-      if (isStopped) break;
+      if (isStoppedRef.current) break;
 
       setBulkStatus(prev => ({ ...prev, current: i + 1 }));
 
       try {
         await handleFollowAction(pending[i].login);
-      } catch (err) { // Changed 'e' to 'err'
-        console.error(err); // Removed string literal, now logs the error object directly
-        toast.error('Bulk follow item failed'); // Added toast notification for bulk item failure
+      } catch (err) {
+        console.error('Follow action failed', err);
+        toast.error(`Failed to follow ${pending[i].login}`);
       }
       
       await new Promise(r => setTimeout(r, 700));
     }
 
-    setBulkStatus(prev => ({ ...prev, active: false }));
+    setBulkStatus(prev => ({ ...prev, active: false, stopped: isStoppedRef.current }));
   }, [token, followers, handleFollowAction]);
 
   const stopBulkFollow = useCallback(() => {
+    isStoppedRef.current = true;
     setBulkStatus(prev => ({ ...prev, stopped: true }));
   }, []);
 
@@ -109,5 +108,6 @@ export const useFollowersSearch = (token: string) => {
     handleFollowAction,
     handleBulkFollow,
     stopBulkFollow
+  };
   };
 };
