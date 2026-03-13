@@ -124,39 +124,41 @@ export const HomePage: React.FC = () => {
           <StatsSection {...stats} />
 
           <div className="manager-section">
-            {activeTab === 'search' ? (
-              <BulkStatusBar 
-                current={search.bulkStatus.current}
-                total={search.bulkStatus.active ? search.bulkStatus.total : search.followers.filter(u => u.state !== 'done').length}
-                isActive={search.bulkStatus.active}
-                onStop={search.stopBulkFollow}
-                onStart={() => {
-                  toast.promise(search.handleBulkFollow(), {
-                    loading: 'Bulk following...',
-                    success: 'Bulk follow action finished',
-                    error: 'Bulk action failed'
-                  });
-                }}
-                type="follow"
-              />
-            ) : (
-              activeTab !== 'mutual' && (
+            <div className="bulk-actions-wrapper">
+              {activeTab === 'search' ? (
                 <BulkStatusBar 
-                  current={bulkStatus.current}
-                  total={bulkStatus.active ? bulkStatus.total : (activeTab === 'nonMutual' ? nonMutual.filter(u => u.state !== 'done').length : fans.filter(u => u.state !== 'done').length)}
-                  isActive={bulkStatus.active}
-                  onStop={stopBulkAction}
+                  current={search.bulkStatus.current}
+                  total={search.bulkStatus.active ? search.bulkStatus.total : search.followers.filter(u => u.state !== 'done').length}
+                  isActive={search.bulkStatus.active}
+                  onStop={search.stopBulkFollow}
                   onStart={() => {
-                    toast.promise(handleBulkAction(token, activeTab as 'nonMutual' | 'fans'), {
-                      loading: `Bulk ${activeTab === 'nonMutual' ? 'unfollowing' : 'following'}...`,
-                      success: 'Bulk action finished',
+                    toast.promise(search.handleBulkFollow(), {
+                      loading: 'Bulk following...',
+                      success: 'Bulk follow action finished',
                       error: 'Bulk action failed'
                     });
                   }}
-                  type={activeTab === 'nonMutual' ? 'unfollow' : 'follow'}
+                  type="follow"
                 />
-              )
-            )}
+              ) : (
+                activeTab !== 'mutual' && (
+                  <BulkStatusBar 
+                    current={bulkStatus.current}
+                    total={bulkStatus.active ? bulkStatus.total : (activeTab === 'nonMutual' ? nonMutual.filter(u => u.state !== 'done').length : fans.filter(u => u.state !== 'done').length)}
+                    isActive={bulkStatus.active}
+                    onStop={stopBulkAction}
+                    onStart={() => {
+                      toast.promise(handleBulkAction(token, activeTab as 'nonMutual' | 'fans'), {
+                        loading: `Bulk ${activeTab === 'nonMutual' ? 'unfollowing' : 'following'}...`,
+                        success: 'Bulk action finished',
+                        error: 'Bulk action failed'
+                      });
+                    }}
+                    type={activeTab === 'nonMutual' ? 'unfollow' : 'follow'}
+                  />
+                )
+              )}
+            </div>
 
             <ManagerTabs 
               activeTab={activeTab}
@@ -190,7 +192,7 @@ export const HomePage: React.FC = () => {
                     />
                   </div>
 
-                  <div className="actions-group" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                  <div className="actions-group">
                     <button className="copy-btn" onClick={handleCopyLogins}>
                       <Copy size={14} />
                       Logins
