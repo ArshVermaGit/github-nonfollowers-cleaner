@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { GitHubService } from '../services/github';
 import type { GitHubUser, UserWithState, UserState, BulkStatus } from '../types/github';
 
@@ -20,6 +20,8 @@ export const useGitHubManager = () => {
     total: 0,
     stopped: false
   });
+
+  const isStoppedRef = useRef(false);
 
   const analyze = useCallback(async (token: string, username: string) => {
     setIsAnalyzing(true);
@@ -111,15 +113,11 @@ export const useGitHubManager = () => {
     const pending = list.filter(u => u.state !== 'done');
     const action = type === 'nonMutual' ? 'unfollow' : 'follow';
     
+    isStoppedRef.current = false;
     setBulkStatus({ active: true, current: 0, total: pending.length, stopped: false });
 
     for (let i = 0; i < pending.length; i++) {
-      let isStopped = false;
-      setBulkStatus(prev => {
-        if (prev.stopped) isStopped = true;
-        return prev;
-      });
-      if (isStopped) break;
+      if (isStoppedRef.current) break;
 
       setBulkStatus(prev => ({ ...prev, current: i + 1 }));
 
@@ -132,10 +130,11 @@ export const useGitHubManager = () => {
       await new Promise(r => setTimeout(r, 700));
     }
 
-    setBulkStatus(prev => ({ ...prev, active: false }));
+    setBulkStatus(prev => ({ ...prev, active: false, stopped: isStoppedRef.current }));
   }, [nonMutual, fans, handleAction]);
 
   const stopBulkAction = useCallback(() => {
+    isStoppedRef.current = true;
     setBulkStatus(prev => ({ ...prev, stopped: true }));
   }, []);
 
